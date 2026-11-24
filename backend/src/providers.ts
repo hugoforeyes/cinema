@@ -13,9 +13,21 @@ const catalog: (Movie & { file: string })[] = [
  {id:'elephants-dream',title:'Elephants Dream',year:2006,genre:'Animation · Sci-fi',duration:'11 min',description:'Two travelers explore a strange mechanical world.',artwork:base+'images/ElephantsDream.jpg',credit:'Blender Foundation · CC BY',file:'ElephantsDream.mp4'}
 ];
 function publicMovie({file: _file,...movie}: typeof catalog[number]): Movie { return movie; }
-function matches(movie:Movie, query:string) {
- const q=query.trim().toLowerCase(); return !q || [movie.title,movie.genre,String(movie.year)].join(' ').toLowerCase().includes(q);
+export function normalizeSearch(value:string):string {
+ return value.toLowerCase().normalize('NFD').replace(/\p{M}/gu,'').replace(/đ/g,'d').replace(/[^\p{L}\p{N}]+/gu,' ').trim();
 }
+function matches(movie:Movie, query:string) {
+ const q=normalizeSearch(query);
+ const haystack=normalizeSearch([movie.title,movie.genre,String(movie.year),...(movie.aliases??[])].join(' '));
+ return !q || q.split(' ').every(word=>haystack.includes(word));
+}
+const officialMovie:Movie = {
+ id:'jirai-glico',title:'Kéo Búa Mìn',year:2026,genre:'Bí ẩn · Chính kịch · Nhật Bản',
+ duration:'Phim bộ',description:'Một nữ sinh có tài chơi trò chơi đối đầu với những đối thủ trong các cuộc đấu trí đầy bất ngờ.',
+ artwork:'/jirai-glico.svg',credit:'Prime Video · Nguồn phát chính thức',
+ aliases:['Kéo, Búa, Mìn','Rock, Paper, Landmines','Rock, Paper, Landmine','Jirai Glico','地雷グリコ'],
+ watchUrl:'https://www.primevideo.com/detail/0H3KVJK9MTLRPQKPE8OUY64YJU'
+};
 const episode = {id:'feature',title:'Full movie'};
 export const providers: MovieProvider[] = [
  {name:'Public MP4',
@@ -25,5 +37,6 @@ export const providers: MovieProvider[] = [
  {name:'Mux HLS demo',
   async search(q){return catalog.slice(0,1).filter(m=>matches(m,q)).map(publicMovie)},
   async getEpisodes(id){return id===catalog[0].id?[episode]:[]},
-  async getVideoSources(id,ep){return id===catalog[0].id&&ep===episode.id?[{id:'hls-bunny',provider:'Mux HLS demo',label:'Adaptive HLS',type:'hls',url:'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8'}]:[]}}
+  async getVideoSources(id,ep){return id===catalog[0].id&&ep===episode.id?[{id:'hls-bunny',provider:'Mux HLS demo',label:'Adaptive HLS',type:'hls',url:'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8'}]:[]}},
+ {name:'Official viewing links',async search(q){return matches(officialMovie,q)?[officialMovie]:[]},async getEpisodes(){return []},async getVideoSources(){return []}}
 ];
