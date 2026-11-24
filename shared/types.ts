@@ -5,7 +5,7 @@ export interface Movie {
 }
 export interface Episode { id: string; title: string; }
 export interface VideoSource {
-  id: string; provider: string; label: string; type: 'hls' | 'mp4'; url: string;
+  id: string; provider: string; label: string; type: 'hls' | 'mp4' | 'embed'; url: string;
 }
 export interface MovieDetail extends Movie { episodes: Episode[]; }
 export interface SearchResult { movies: Movie[]; unavailableProviders: string[]; }
