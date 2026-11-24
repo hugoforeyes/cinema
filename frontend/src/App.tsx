@@ -2,9 +2,9 @@ import {useEffect,useRef,useState} from 'react';
 import {Link,Route,Routes,useParams,useSearchParams} from 'react-router-dom';
 import {Film,Search,Bookmark,Play,ArrowLeft} from 'lucide-react';
 import type {Movie,MovieDetail,SearchResult,VideoSource} from '../../shared/types';
-import {api,read,write} from './api';
+import {api,read} from './api';
 import Player from './Player';
-import EpisodePlayer from './EpisodePlayer';
+import {selectSource} from '../../shared/source-selection';
 import MediaTools from './MediaTools';
 
 function Poster({movie}:{movie:Movie}){return <Link className="poster" to={'/watch/'+movie.id}><div className="art"><img src={movie.artwork} alt="" loading="lazy"/><span className="playbadge"><Play size={20} fill="currentColor"/></span></div><strong>{movie.title}</strong><small>{movie.year} · {movie.duration}</small></Link>}
@@ -25,11 +25,43 @@ function Home({library=false}:{library?:boolean}){
  </main>;
 }
 function Watch(){
- const {id=''}=useParams();const [movie,setMovie]=useState<MovieDetail|null>(null);const [episode,setEpisode]=useState('');const [sources,setSources]=useState<VideoSource[]>([]);const [selected,setSelected]=useState('');const [error,setError]=useState('');const [saved,setSaved]=useState(false);
- useEffect(()=>{const c=new AbortController();setMovie(null);setEpisode('');setSources([]);setError('');setSaved(read<string[]>('cinema:favorites',[]).includes(id));api<MovieDetail>('/movies/'+encodeURIComponent(id),c.signal).then(m=>{setMovie(m);setEpisode(m.episodes[0]?.id??'')}).catch(e=>{if(!c.signal.aborted)setError(String(e))});return()=>c.abort()},[id]);
- useEffect(()=>{if(!episode)return;const c=new AbortController();setSources([]);setSelected('');setError('');api<{sources:VideoSource[]}>('/movies/'+encodeURIComponent(id)+'/episodes/'+encodeURIComponent(episode)+'/sources',c.signal).then(r=>{setSources(r.sources);setSelected(r.sources[0]?.id??'');if(!r.sources.length)setError('Không có nguồn phát khả dụng.')}).catch(e=>{if(!c.signal.aborted)setError(String(e))});return()=>c.abort()},[id,episode]);
- const source=sources.find(s=>s.id===selected);
- function toggle(){const all=read<string[]>('cinema:favorites',[]);const next=all.includes(id)?all.filter(x=>x!==id):[...all,id];write('cinema:favorites',next);setSaved(next.includes(id))}
- return <main><Link className="back" to="/"><ArrowLeft size={18}/> Trang chủ</Link>{error&&<p role="alert" className="notice">{error}</p>}{movie?<><h1 className="watchtitle">{movie.title}</h1>{movie.externalListings?.length?<><EpisodePlayer key={movie.id} movieId={movie.id} pageLinks={movie.externalListings} count={Math.max(...movie.externalListings.map(x=>x.reportedEpisodes))}/><section aria-label="Nguồn Vietsub" style={{background:'#1d1d25',padding:20,borderRadius:16}}><h2 style={{marginTop:0}}>Nguồn Vietsub</h2><p><small>Các trang bên ngoài công bố có đủ 6 tập. Cinema chưa xác minh bản quyền, phụ đề hoặc khả năng phát. Liên kết mở trang bên ngoài, không phát trong Cinema.</small></p><div style={{display:'grid',gap:10,marginTop:16}}>{movie.externalListings.map(item=><a key={item.url} className="secondary" style={{justifyContent:'space-between'}} href={item.url} target="_blank" rel="noopener noreferrer"><span>{item.name}</span><small>{item.language} · {item.reportedEpisodes} tập ↗</small></a>)}</div>{movie.watchUrl&&<p style={{marginTop:16}}><a href={movie.watchUrl} target="_blank" rel="noopener noreferrer">Nguồn chính thức: Prime Video ↗</a></p>}</section></>:movie.watchUrl?<div className="player empty"><div style={{textAlign:'center',padding:20}}><p>Phim có trên nền tảng chính thức.</p><a className="primary" href={movie.watchUrl} target="_blank" rel="noopener noreferrer"><Play size={18}/> Xem trên Prime Video</a><p><small>Có thể cần đăng nhập hoặc thuê bao. Phụ đề tùy khu vực.</small></p></div></div>:source?<Player key={episode} source={source} progressKey={'cinema:progress:'+id+':'+episode}/>:<div className="player empty">Đang chọn nguồn phát…</div>}<div className="sectionhead"><h2>{movie.watchUrl?'Nền tảng phát chính thức':'Nguồn phát'}</h2><button className="secondary" onClick={toggle}><Bookmark size={18} fill={saved?'currentColor':'none'}/>{saved?'Đã lưu':'Lưu phim'}</button></div><div className="choices">{sources.map(s=><button key={s.id} className={selected===s.id?'active':''} onClick={()=>setSelected(s.id)}>{s.label} · {s.provider}</button>)}</div>{!movie.watchUrl&&<h2>Danh sách tập</h2>}<div className="choices">{movie.episodes.map(e=><button key={e.id} className={episode===e.id?'active':''} onClick={()=>setEpisode(e.id)}>{e.title}</button>)}</div><p>{movie.description}</p><small>{movie.credit} · {movie.year} · {movie.genre}</small></>:!error&&<p>Đang tải phim…</p>}</main>
+ const {id=''}=useParams();
+ const [movie,setMovie]=useState<MovieDetail|null>(null);
+ const [episode,setEpisode]=useState('');
+ const [sources,setSources]=useState<VideoSource[]>([]);
+ const [provider,setProvider]=useState('');
+ const [error,setError]=useState('');
+ const [sourceError,setSourceError]=useState('');
+ const [loading,setLoading]=useState(true);
+ useEffect(()=>{
+  const c=new AbortController();setMovie(null);setEpisode('');setProvider('');setSources([]);setError('');
+  api<MovieDetail>('/movies/'+encodeURIComponent(id),c.signal).then(m=>{if(c.signal.aborted)return;setMovie(m);setEpisode(m.episodes[0]?.id??'');setProvider(m.externalListings?.[0]?.name??'')}).catch(e=>{if(!c.signal.aborted)setError(String(e))});
+  return()=>c.abort();
+ },[id]);
+ useEffect(()=>{
+  if(!episode)return;
+  const c=new AbortController();setSources([]);setLoading(true);setSourceError('');
+  api<{sources:VideoSource[];unavailableProviders:string[]}>('/movies/'+encodeURIComponent(id)+'/episodes/'+encodeURIComponent(episode)+'/sources',c.signal)
+   .then(r=>{if(c.signal.aborted)return;setSources(r.sources);if(r.unavailableProviders.length)setSourceError('Một số nguồn hiện không khả dụng.')})
+   .catch(()=>{if(!c.signal.aborted)setSourceError('Không tải được nguồn phát.')})
+   .finally(()=>{if(!c.signal.aborted)setLoading(false)});
+  return()=>c.abort();
+ },[id,episode]);
+ if(!movie)return <main><Link className="back" to="/"><ArrowLeft size={18}/> Trang chủ</Link><p role={error?'alert':undefined}>{error||'Đang tải phim…'}</p></main>;
+ const names=[...new Set([...(movie.externalListings??[]).map(x=>x.name),...sources.map(x=>x.provider)])];
+ const activeProvider=names.includes(provider)?provider:names[0]??'';
+ const source=selectSource(sources,activeProvider);
+ const current=movie.episodes.find(e=>e.id===episode);
+ return <main className="simple-watch"><Link className="back" to="/"><ArrowLeft size={18}/> Trang chủ</Link>
+ <h1 className="watchtitle">{movie.title}</h1>
+ <section aria-label="Trình phát video">
+ {source?.type==='embed'?<div className="player"><iframe title="Video" src={source.url} className="video-frame" sandbox="allow-scripts allow-presentation" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen referrerPolicy="no-referrer"/></div>:source?<Player key={episode+':'+source.id} source={source} progressKey={'cinema:progress:'+id+':'+episode}/>:<div className="player empty video-status" role="status"><div><Film size={30}/><strong>{loading&&episode?'Đang tải nguồn phát…':'Chưa có video khả dụng'}</strong><small>{sourceError||[current?.title,activeProvider].filter(Boolean).join(' · ')}</small>{!loading&&<small>Chưa có nguồn video được xác minh cho lựa chọn này.</small>}</div></div>}
+ </section>
+ <h2>Chọn tập</h2>
+ <div className="choices episode-grid">{movie.episodes.map(e=><button key={e.id} aria-pressed={episode===e.id} className={episode===e.id?'active':''} onClick={()=>{if(e.id!==episode){setLoading(true);setSources([]);setEpisode(e.id)}}}>{e.title}</button>)}</div>
+ <h2>Chọn nguồn</h2>
+ <div className="choices source-grid">{names.map(name=><button key={name} aria-pressed={activeProvider===name} className={activeProvider===name?'active':''} onClick={()=>setProvider(name)}>{name}{!loading&&!sources.some(s=>s.provider===name)&&<small>Chưa có video</small>}</button>)}</div>
+ {!names.length&&<small>Chưa có nguồn phát trong Cinema.</small>}
+ </main>;
 }
-export default function App(){return <><header><Link className="brand" to="/"><Film size={24}/> cinema<span>.</span></Link><nav><Link to="/tools/media">Media tools</Link><Link to="/">Khám phá</Link><Link to="/library"><Bookmark size={17}/> Thư viện</Link></nav></header><Routes><Route path="/" element={<Home/>}/><Route path="/library" element={<Home key="library" library/>}/><Route path="/watch/:id" element={<Watch/>}/><Route path="/tools/media" element={<MediaTools/>}/><Route path="*" element={<main><h1>Không tìm thấy trang</h1><Link to="/">Trang chủ</Link></main>}/></Routes><footer>Cinema · v0.1.8 · Phim mẫu và danh mục liên kết bên ngoài.</footer></>}
+export default function App(){return <><header><Link className="brand" to="/"><Film size={24}/> cinema<span>.</span></Link><nav><Link to="/tools/media">Media tools</Link><Link to="/">Khám phá</Link><Link to="/library"><Bookmark size={17}/> Thư viện</Link></nav></header><Routes><Route path="/" element={<Home/>}/><Route path="/library" element={<Home key="library" library/>}/><Route path="/watch/:id" element={<Watch/>}/><Route path="/tools/media" element={<MediaTools/>}/><Route path="*" element={<main><h1>Không tìm thấy trang</h1><Link to="/">Trang chủ</Link></main>}/></Routes><footer>Cinema · v0.1.10 · Phim mẫu và danh mục liên kết bên ngoài.</footer></>}
