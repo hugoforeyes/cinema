@@ -23,10 +23,17 @@ function matches(movie:Movie, query:string) {
 }
 const officialMovie:Movie = {
  id:'jirai-glico',title:'Kéo Búa Mìn',year:2026,genre:'Bí ẩn · Chính kịch · Nhật Bản',
- duration:'Phim bộ',description:'Một nữ sinh có tài chơi trò chơi đối đầu với những đối thủ trong các cuộc đấu trí đầy bất ngờ.',
+ duration:'6 tập',description:'Một nữ sinh có tài chơi trò chơi đối đầu với những đối thủ trong các cuộc đấu trí đầy bất ngờ.',
  artwork:'/jirai-glico.svg',credit:'Prime Video · Nguồn phát chính thức',
- aliases:['Kéo, Búa, Mìn','Rock, Paper, Landmines','Rock, Paper, Landmine','Jirai Glico','地雷グリコ'],
- watchUrl:'https://www.primevideo.com/detail/0H3KVJK9MTLRPQKPE8OUY64YJU'
+ aliases:['Kéo, Búa, Mìn','Rock, Paper, Landmines','Rock, Paper, Landmine','Jirai Glico','地雷グリコ','Vietsub','phụ đề tiếng Việt'],
+ watchUrl:'https://www.primevideo.com/detail/0H3KVJK9MTLRPQKPE8OUY64YJU',
+ externalListings:[
+  {name:'Motchill',url:'https://motchillti.mx/phim/keo-bua-min',language:'Vietsub',reportedEpisodes:6},
+  {name:'RoPhim',url:'https://rophim.bar/phimmoi-keo-bua-min-22753.html',language:'Vietsub',reportedEpisodes:6},
+  {name:'PhimSubViet',url:'https://phimsubviet.me/phim/keo-bua-min',language:'Vietsub',reportedEpisodes:6},
+  {name:'Movina',url:'https://www.movina.tv/phim/keo-bua-min',language:'Vietsub',reportedEpisodes:6},
+  {name:'PhimMoiGo',url:'https://phimmoigo.net/phim/keo-bua-min',language:'Vietsub',reportedEpisodes:6}
+ ]
 };
 const episode = {id:'feature',title:'Full movie'};
 export const providers: MovieProvider[] = [
