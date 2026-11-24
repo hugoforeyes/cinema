@@ -1,6 +1,7 @@
 import {useEffect,useState} from 'react';
 import Player from './Player';
 import InspectorReport from './InspectorReport';
+import EmbedPlayer from './EmbedPlayer';
 import type {VideoSource} from '../../shared/types';
 function useObjectUrl(file:Blob|null){
  const [url,setUrl]=useState('');
@@ -37,5 +38,5 @@ function EpisodeSource({episode,progressKey}:{episode:number;progressKey:string}
  {error&&<p role="alert" className="notice">{error}</p>}
  <InspectorReport onSelect={item=>{const type=item.type==='HLS'?'hls':'mp4';setFile(null);setUrl(item.url);setKind(type);setRemote({id:'inspected',provider:'Local Inspector',label:type.toUpperCase(),type,url:item.url});setError('')}}/>
  <small>File chỉ được đọc trên thiết bị, không tải lên Render. URL trang xem phim không phải URL video. Nguồn từ xa phải cho phép trình duyệt phát; Cinema không vượt DRM hoặc hạn chế của nguồn.</small>
- </div></>;
+ </div><EmbedPlayer/></>;
 }
