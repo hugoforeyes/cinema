@@ -1,11 +1,20 @@
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
+import {mkdtempSync,readFileSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 import {chromium, webkit} from 'playwright';
 
 // Generate our own short film. No requests go to commercial media sites.
-const clip = execFileSync('ffmpeg', ['-loglevel','error','-f','lavfi','-i',
+const dir = mkdtempSync(join(tmpdir(),'cinema-fixture-'));
+const file = join(dir,'clip.mp4');
+let clip;
+try {
+  execFileSync('ffmpeg', ['-loglevel','error','-f','lavfi','-i',
   'testsrc2=size=240x136:rate=12','-t','8','-c:v','libx264','-pix_fmt','yuv420p',
-  '-movflags','frag_keyframe+empty_moov','-f','mp4','pipe:1']).toString('base64');
+  '-movflags','+faststart',file]);
+  clip = readFileSync(file).toString('base64');
+} finally { rmSync(dir,{recursive:true,force:true}); }
 const subtitles = encodeURIComponent('WEBVTT\n\n00:00:00.000 --> 00:00:07.900\nPhụ đề thử nghiệm\n');
 const engine = process.argv[2] || 'chromium';
 const browser = await ({chromium,webkit}[engine]).launch({
@@ -25,11 +34,12 @@ try {
   });
   await page.route(fixture+'/**', route => {
     const path = new URL(route.request().url()).pathname;
+    if(path==='/vi.vtt') return route.fulfill({contentType:'text/vtt; charset=utf-8',headers:{'Access-Control-Allow-Origin':'*'},body:decodeURIComponent(subtitles)});
     if(path==='/blocked') return route.fulfill({contentType:'text/html',
       headers:{'Content-Security-Policy':"frame-ancestors 'none'"},body:'<button>Forbidden player</button>'});
     return route.fulfill({contentType:'text/html',body:`<style>*{margin:0}main{margin-top:80px}video{width:240px;display:block}</style><main>
-      <video muted playsinline src="data:video/mp4;base64,${clip}"><track default kind="subtitles" srclang="vi" src="data:text/vtt,${subtitles}"></video>
-      <button onclick="v.play()">Play ${path}</button><button onclick="v.pause()">Pause</button>
+      <video crossorigin="anonymous" muted playsinline src="data:video/mp4;base64,${clip}"><track default kind="subtitles" srclang="vi" src="${fixture}/vi.vtt"></video>
+      <button onclick="v.textTracks[0].mode='showing';v.play()">Play ${path}</button><button onclick="v.pause()">Pause</button>
       <button onclick="v.currentTime=4">Seek</button><button onclick="probe()">Probe</button>
       <output></output><script>const v=document.querySelector('video');function probe(){
         const popup=window.open('about:blank');let blocked=false;
@@ -51,7 +61,7 @@ try {
   await play.tap(); // preview overlay must allow touches
   const video = frame.locator('video');
   await video.evaluate(v=>new Promise((resolve,reject)=>{
-    const timeout=setTimeout(()=>reject(Error('no video progress or Vietnamese cue')),8000);
+    const timeout=setTimeout(()=>reject(Error(JSON.stringify({time:v.currentTime,ready:v.readyState,paused:v.paused,error:v.error?.message,track:v.querySelector('track').readyState,mode:v.textTracks[0]?.mode,cue:v.textTracks[0]?.activeCues?.[0]?.text}))),8000);
     function check(){if(v.currentTime>.25 && v.textTracks[0]?.activeCues?.[0]?.text==='Phụ đề thử nghiệm'){
       clearTimeout(timeout);v.removeEventListener('timeupdate',check);resolve();}}
     v.addEventListener('timeupdate',check);check();
