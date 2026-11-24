@@ -13,8 +13,9 @@ app.get<{Params:{id:string}}>('/api/movies/:id',async(req,reply)=>{
  return movie??reply.code(404).send({error:'Movie not found'});
 });
 app.get<{Params:{id:string;episode:string}}>('/api/movies/:id/episodes/:episode/sources',async(req,reply)=>{
+ const movie=await aggregator.detail(req.params.id);
+ if(!movie?.episodes.some(e=>e.id===req.params.episode))return reply.code(404).send({error:'Episode not found'});
  const r=await aggregator.sources(req.params.id,req.params.episode);
- if(!r.items.length && !r.unavailableProviders.length)return reply.code(404).send({error:'No sources found'});
  return {sources:r.items,unavailableProviders:r.unavailableProviders};
 });
 const root=resolve('dist/web');
