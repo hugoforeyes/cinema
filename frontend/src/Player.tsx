@@ -2,7 +2,7 @@ import {useEffect,useRef,useState} from 'react';
 import Hls from 'hls.js';
 import type {VideoSource} from '../../shared/types';
 import {read,write} from './api';
-export default function Player({source,progressKey}:{source:VideoSource;progressKey:string}){
+export default function Player({source,progressKey,subtitleUrl}:{source:VideoSource;progressKey:string;subtitleUrl?:string}){
  const ref=useRef<HTMLVideoElement>(null);
  const [error,setError]=useState('');
  useEffect(()=>{
@@ -21,5 +21,5 @@ export default function Player({source,progressKey}:{source:VideoSource;progress
   }else video.src=source.url;
   return ()=>{save();video.removeEventListener('loadedmetadata',restore);video.removeEventListener('error',fail);video.removeEventListener('pause',save);video.removeEventListener('timeupdate',save);hls?.destroy();video.pause();video.removeAttribute('src');video.load()};
  },[source.url,source.type,progressKey]);
- return <div className="player"><video ref={ref} controls playsInline preload="metadata"/>{error&&<p role="alert" className="notice">{error}</p>}</div>;
+ return <div className="player"><video ref={ref} controls playsInline preload="metadata">{subtitleUrl&&<track key={subtitleUrl} kind="subtitles" srcLang="vi" label="Tiếng Việt" src={subtitleUrl} default/>}</video>{error&&<p role="alert" className="notice">{error}</p>}</div>;
 }
