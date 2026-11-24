@@ -1,0 +1,33 @@
+import {useEffect,useState} from 'react';
+import {Link,Route,Routes,useParams,useSearchParams} from 'react-router-dom';
+import {Film,Search,Bookmark,Play,ArrowLeft} from 'lucide-react';
+import type {Movie,MovieDetail,SearchResult,VideoSource} from '../../shared/types';
+import {api,read,write} from './api';
+import Player from './Player';
+
+function Poster({movie}:{movie:Movie}){return <Link className="poster" to={'/watch/'+movie.id}><div className="art"><img src={movie.artwork} alt="" loading="lazy"/><span className="playbadge"><Play size={20} fill="currentColor"/></span></div><strong>{movie.title}</strong><small>{movie.year} · {movie.duration}</small></Link>}
+function Home({library=false}:{library?:boolean}){
+ const [params,setParams]=useSearchParams();const q=params.get('q')??'';
+ const [movies,setMovies]=useState<Movie[]>([]);const [loading,setLoading]=useState(true);const [error,setError]=useState('');
+ useEffect(()=>{const c=new AbortController();setLoading(true);setError('');const timer=setTimeout(()=>{api<SearchResult>('/movies?q='+encodeURIComponent(q),c.signal).then(r=>{setMovies(r.movies);if(r.unavailableProviders.length)setError('Một số nguồn hiện không khả dụng.')}).catch(e=>{if(!c.signal.aborted)setError(String(e))}).finally(()=>{if(!c.signal.aborted)setLoading(false)})},200);return()=>{clearTimeout(timer);c.abort()}},[q]);
+ const favorites=read<string[]>('cinema:favorites',[]);
+ const list=library?movies.filter(m=>favorites.includes(m.id)):movies;
+ const hero=!library&&!q?list[0]:undefined;
+ return <main>
+ {!library&&<label className="search"><Search size={19}/><input aria-label="Tìm phim" placeholder="Tìm tên phim, thể loại..." value={q} onChange={e=>setParams(e.target.value?{q:e.target.value}:{},{replace:true})}/></label>}
+ {hero&&<section className="hero" style={{backgroundImage:'linear-gradient(90deg,#111116 5%,#11111666 65%),url("'+hero.artwork+'")'}}><span className="eyebrow">CINEMA COLLECTION / 01</span><h1>{hero.title}</h1><p>{hero.description}</p><Link className="primary" to={'/watch/'+hero.id}><Play size={18} fill="currentColor"/> Xem ngay</Link></section>}
+ <div className="sectionhead"><h2>{library?'Danh sách của tôi':q?'Kết quả tìm kiếm':'Khám phá'}</h2><small>{list.length} phim</small></div>
+ {loading&&<p>Đang tải…</p>}{error&&<p role="alert" className="notice">{error}</p>}
+ {!loading&&!list.length&&<p>Chưa có phim phù hợp.</p>}
+ <div className="posters">{list.map(movie=><Poster key={movie.id} movie={movie}/>)}</div>
+ </main>;
+}
+function Watch(){
+ const {id=''}=useParams();const [movie,setMovie]=useState<MovieDetail|null>(null);const [episode,setEpisode]=useState('');const [sources,setSources]=useState<VideoSource[]>([]);const [selected,setSelected]=useState('');const [error,setError]=useState('');const [saved,setSaved]=useState(false);
+ useEffect(()=>{const c=new AbortController();setMovie(null);setEpisode('');setSources([]);setError('');setSaved(read<string[]>('cinema:favorites',[]).includes(id));api<MovieDetail>('/movies/'+encodeURIComponent(id),c.signal).then(m=>{setMovie(m);setEpisode(m.episodes[0]?.id??'')}).catch(e=>{if(!c.signal.aborted)setError(String(e))});return()=>c.abort()},[id]);
+ useEffect(()=>{if(!episode)return;const c=new AbortController();setSources([]);setSelected('');setError('');api<{sources:VideoSource[]}>('/movies/'+encodeURIComponent(id)+'/episodes/'+encodeURIComponent(episode)+'/sources',c.signal).then(r=>{setSources(r.sources);setSelected(r.sources[0]?.id??'');if(!r.sources.length)setError('Không có nguồn phát khả dụng.')}).catch(e=>{if(!c.signal.aborted)setError(String(e))});return()=>c.abort()},[id,episode]);
+ const source=sources.find(s=>s.id===selected);
+ function toggle(){const all=read<string[]>('cinema:favorites',[]);const next=all.includes(id)?all.filter(x=>x!==id):[...all,id];write('cinema:favorites',next);setSaved(next.includes(id))}
+ return <main><Link className="back" to="/"><ArrowLeft size={18}/> Trang chủ</Link>{error&&<p role="alert" className="notice">{error}</p>}{movie?<><h1 className="watchtitle">{movie.title}</h1>{source?<Player key={episode} source={source} progressKey={'cinema:progress:'+id+':'+episode}/>:<div className="player empty">Đang chọn nguồn phát…</div>}<div className="sectionhead"><h2>Nguồn phát</h2><button className="secondary" onClick={toggle}><Bookmark size={18} fill={saved?'currentColor':'none'}/>{saved?'Đã lưu':'Lưu phim'}</button></div><div className="choices">{sources.map(s=><button key={s.id} className={selected===s.id?'active':''} onClick={()=>setSelected(s.id)}>{s.label} · {s.provider}</button>)}</div><h2>Danh sách tập</h2><div className="choices">{movie.episodes.map(e=><button key={e.id} className={episode===e.id?'active':''} onClick={()=>setEpisode(e.id)}>{e.title}</button>)}</div><p>{movie.description}</p><small>{movie.credit} · {movie.year} · {movie.genre}</small></>:!error&&<p>Đang tải phim…</p>}</main>
+}
+export default function App(){return <><header><Link className="brand" to="/"><Film size={24}/> cinema<span>.</span></Link><nav><Link to="/">Khám phá</Link><Link to="/library"><Bookmark size={17}/> Thư viện</Link></nav></header><Routes><Route path="/" element={<Home/>}/><Route path="/library" element={<Home key="library" library/>}/><Route path="/watch/:id" element={<Watch/>}/><Route path="*" element={<main><h1>Không tìm thấy trang</h1><Link to="/">Trang chủ</Link></main>}/></Routes><footer>Cinema · Open film demo · Video được phát từ nguồn bên ngoài.</footer></>}

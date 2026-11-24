@@ -1,0 +1,37 @@
+{
+  "name": "cinema",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "concurrently -k \"tsx watch backend/src/server.ts\" \"vite\"",
+    "check": "tsc -p backend/tsconfig.json --noEmit && tsc -p frontend/tsconfig.json --noEmit",
+    "test": "tsx --test backend/test/*.test.ts",
+    "build": "npm run check && tsc -p backend/tsconfig.json && vite build",
+    "start": "node dist/server/backend/src/server.js"
+  },
+  "dependencies": {
+    "@fastify/static": "^8.0.0",
+    "fastify": "^5.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.0.0",
+    "hls.js": "^1.5.0",
+    "lucide-react": "^0.468.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "@tailwindcss/vite": "^4.0.0",
+    "tailwindcss": "^4.0.0",
+    "vite": "^6.0.0",
+    "typescript": "^5.7.0",
+    "tsx": "^4.19.0",
+    "concurrently": "^9.1.0"
+  }
+}
