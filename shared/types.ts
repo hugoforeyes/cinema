@@ -1,6 +1,7 @@
+export interface ExternalListing { name: string; url: string; language: string; reportedEpisodes: number; }
 export interface Movie {
   id: string; title: string; year: number; description: string;
-  genre: string; artwork: string; duration: string; credit: string; watchUrl?: string; aliases?: string[];
+  genre: string; artwork: string; duration: string; credit: string; watchUrl?: string; aliases?: string[]; externalListings?: ExternalListing[];
 }
 export interface Episode { id: string; title: string; }
 export interface VideoSource {
