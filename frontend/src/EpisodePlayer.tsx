@@ -2,20 +2,20 @@ import {useEffect,useState} from 'react';
 import Player from './Player';
 import InspectorReport from './InspectorReport';
 import EmbedPlayer from './EmbedPlayer';
-import type {VideoSource,ExternalListing} from '../../shared/types';
+import type {VideoSource} from '../../shared/types';
 function useObjectUrl(file:Blob|null){
  const [url,setUrl]=useState('');
  useEffect(()=>{if(!file){setUrl('');return}const u=URL.createObjectURL(file);setUrl(u);return()=>URL.revokeObjectURL(u)},[file]);
  return url;
 }
-export default function EpisodePlayer({movieId,count,pageLinks=[]}:{movieId:string;count:number;pageLinks?:ExternalListing[]}){
+export default function EpisodePlayer({movieId,count,tools=false}:{movieId:string;count:number;tools?:boolean}){
  const [episode,setEpisode]=useState(1);
  return <section style={{marginBottom:24}} aria-label="Trình phát Cinema">
  <h2>Danh sách tập</h2><div className="choices">{Array.from({length:count},(_,i)=>i+1).map(n=><button key={n} aria-pressed={episode===n} className={episode===n?'active':''} onClick={()=>setEpisode(n)}>Tập {n}</button>)}</div>
- <EpisodeSource key={episode} progressKey={'cinema:personal:'+movieId+':'+episode} episode={episode} pageLinks={pageLinks}/>
+ <EpisodeSource key={episode} progressKey={'cinema:personal:'+movieId+':'+episode} episode={episode} tools={tools}/>
  </section>;
 }
-function EpisodeSource({episode,progressKey,pageLinks}:{episode:number;progressKey:string;pageLinks:ExternalListing[]}){
+function EpisodeSource({episode,progressKey,tools}:{episode:number;progressKey:string;tools:boolean}){
  const [file,setFile]=useState<File|null>(null);
  const [sub,setSub]=useState<File|null>(null);
  const [url,setUrl]=useState('');
@@ -28,8 +28,8 @@ function EpisodeSource({episode,progressKey,pageLinks}:{episode:number;progressK
  <EmbedPlayer pageLinks={pageLinks}/>
  <details style={{marginTop:16}}><summary style={{cursor:"pointer",padding:12,background:"#23232d",borderRadius:10}}>Công cụ nâng cao · HLS / MP4 / phụ đề</summary>
  <h2>Trình phát Cinema · Tập {episode}</h2>
- {source?<Player source={source} progressKey={progressKey} subtitleUrl={subtitleUrl||undefined}/>:<div className="player empty" style={{textAlign:'center',padding:20}}><div><strong>Chưa có video cho tập {episode}</strong><p><small>Chọn video từ thiết bị hoặc nhập URL video được phép sử dụng.</small></p></div></div>}
- <div style={{padding:16,background:'#1d1d25',borderRadius:12,marginTop:12,display:'grid',gap:12}}>
+ {source?<Player source={source} progressKey={progressKey} subtitleUrl={subtitleUrl||undefined}/>:<div className="player empty" style={{textAlign:'center',padding:20}}><div><strong>Chưa có video cho tập {episode}</strong><p><small>Chưa có nguồn video trực tiếp được xác minh.</small></p></div></div>}
+ {tools&&<><div style={{padding:16,background:'#1d1d25',borderRadius:12,marginTop:12,display:'grid',gap:12}}>
  <label>Video trên thiết bị<input style={{display:'block',maxWidth:'100%'}} type="file" accept="video/*,.mp4,.webm,.mov" onChange={e=>{setFile(e.target.files?.[0]??null);setRemote(null);setError('')}}/></label>
  <label>Phụ đề tiếng Việt (.vtt)<input style={{display:'block',maxWidth:'100%'}} type="file" accept=".vtt,text/vtt" onChange={e=>{setSub(e.target.files?.[0]??null)}}/></label>
  <form style={{display:'grid',gap:10}} onSubmit={e=>{e.preventDefault();try{const u=new URL(url.trim());if(u.protocol!=='https:'||u.username||u.password)throw Error();setFile(null);setRemote({id:'remote',provider:'Nguồn của bạn',label:kind.toUpperCase(),url:u.href,type:kind});setError('')}catch{setError('Nhập URL HTTPS hợp lệ cho luồng video trực tiếp.')}}}>
@@ -40,5 +40,5 @@ function EpisodeSource({episode,progressKey,pageLinks}:{episode:number;progressK
  {error&&<p role="alert" className="notice">{error}</p>}
  <InspectorReport onSelect={item=>{const type=item.type==='HLS'?'hls':'mp4';setFile(null);setUrl(item.url);setKind(type);setRemote({id:'inspected',provider:'Local Inspector',label:type.toUpperCase(),type,url:item.url});setError('')}}/>
  <small>File chỉ được đọc trên thiết bị, không tải lên Render. URL trang xem phim không phải URL video. Nguồn từ xa phải cho phép trình duyệt phát; Cinema không vượt DRM hoặc hạn chế của nguồn.</small>
- </div></details></>;
+ </div><EmbedPlayer/></>}</>;
 }
