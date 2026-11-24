@@ -2,20 +2,20 @@ import {useEffect,useState} from 'react';
 import Player from './Player';
 import InspectorReport from './InspectorReport';
 import EmbedPlayer from './EmbedPlayer';
-import type {VideoSource} from '../../shared/types';
+import type {VideoSource,ExternalListing} from '../../shared/types';
 function useObjectUrl(file:Blob|null){
  const [url,setUrl]=useState('');
  useEffect(()=>{if(!file){setUrl('');return}const u=URL.createObjectURL(file);setUrl(u);return()=>URL.revokeObjectURL(u)},[file]);
  return url;
 }
-export default function EpisodePlayer({movieId,count}:{movieId:string;count:number}){
+export default function EpisodePlayer({movieId,count,pageLinks=[]}:{movieId:string;count:number;pageLinks?:ExternalListing[]}){
  const [episode,setEpisode]=useState(1);
  return <section style={{marginBottom:24}} aria-label="Trình phát Cinema">
  <h2>Danh sách tập</h2><div className="choices">{Array.from({length:count},(_,i)=>i+1).map(n=><button key={n} aria-pressed={episode===n} className={episode===n?'active':''} onClick={()=>setEpisode(n)}>Tập {n}</button>)}</div>
- <EpisodeSource key={episode} progressKey={'cinema:personal:'+movieId+':'+episode} episode={episode}/>
+ <EpisodeSource key={episode} progressKey={'cinema:personal:'+movieId+':'+episode} episode={episode} pageLinks={pageLinks}/>
  </section>;
 }
-function EpisodeSource({episode,progressKey}:{episode:number;progressKey:string}){
+function EpisodeSource({episode,progressKey,pageLinks}:{episode:number;progressKey:string;pageLinks:ExternalListing[]}){
  const [file,setFile]=useState<File|null>(null);
  const [sub,setSub]=useState<File|null>(null);
  const [url,setUrl]=useState('');
@@ -38,5 +38,5 @@ function EpisodeSource({episode,progressKey}:{episode:number;progressKey:string}
  {error&&<p role="alert" className="notice">{error}</p>}
  <InspectorReport onSelect={item=>{const type=item.type==='HLS'?'hls':'mp4';setFile(null);setUrl(item.url);setKind(type);setRemote({id:'inspected',provider:'Local Inspector',label:type.toUpperCase(),type,url:item.url});setError('')}}/>
  <small>File chỉ được đọc trên thiết bị, không tải lên Render. URL trang xem phim không phải URL video. Nguồn từ xa phải cho phép trình duyệt phát; Cinema không vượt DRM hoặc hạn chế của nguồn.</small>
- </div><EmbedPlayer/></>;
+ </div><EmbedPlayer pageLinks={pageLinks}/></>;
 }
