@@ -56,6 +56,7 @@ function CropWatch({movie}:{movie:MovieDetail}){
  {url&&listing?<CroppedFrame key={url} url={url} storageKey={listing.url}/>:<div className="player empty video-status" role="status"><div><Film size={30}/><strong>{listing?'Chưa có link '+label:'Chọn nguồn để xem '+label}</strong><small>{listing?'Không mở trang giới thiệu thay cho tập phim.':'Chọn tập và website.'}</small></div></div>}
  </section>
  <small style={{display:'block',marginTop:12}}>Cinema chỉ mở đường dẫn riêng đã cấu hình cho từng tập. Khả năng nhúng và phát phụ thuộc website nguồn.</small>
+ {movie.watchUrl&&<p><a className="crop-link" href={movie.watchUrl} target="_blank" rel="noopener noreferrer">Mở trang phim trên Prime Video ↗</a><br/><small>Phụ đề tiếng Việt trên Prime Video chưa được xác nhận.</small></p>}
  </>;
 }
 function NativeWatch({movie}:{movie:MovieDetail}){
