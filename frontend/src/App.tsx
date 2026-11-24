@@ -53,7 +53,10 @@ function CropWatch({movie}:{movie:MovieDetail}){
  <h2>Chọn nguồn</h2>
  <div className="choices source-grid">{movie.externalListings?.map(item=><button key={item.name} aria-pressed={item.name===name} className={item.name===name?'active':''} onClick={()=>setName(item.name)}>{item.name}{!episodePage(item,episode)&&<small>Chưa có link tập</small>}</button>)}</div>
  <section aria-label="Khung xem phim" style={{marginTop:16}}>
- {url&&listing?<CroppedFrame key={url} url={url} storageKey={listing.url}/>:<div className="player empty video-status" role="status"><div><Film size={30}/><strong>{listing?'Chưa có link '+label:'Chọn nguồn để xem '+label}</strong><small>{listing?'Không mở trang giới thiệu thay cho tập phim.':'Chọn tập và website.'}</small></div></div>}
+ {url&&listing?.externalOnly?<div className="notice">
+ <p>{listing.name} chỉ cho phép xem tập phim trên trang của họ.</p>
+ <a className="primary" href={url} target="_blank" rel="noopener noreferrer">Mở {label} trên {listing.name} ↗</a>
+ </div>:url&&listing?<CroppedFrame key={url} url={url} storageKey={listing.url}/>:<div className="player empty video-status" role="status"><div><Film size={30}/><strong>{listing?'Chưa có link '+label:'Chọn nguồn để xem '+label}</strong><small>{listing?'Không mở trang giới thiệu thay cho tập phim.':'Chọn tập và website.'}</small></div></div>}
  </section>
  <small style={{display:'block',marginTop:12}}>Cinema chỉ mở đường dẫn riêng đã cấu hình cho từng tập. Khả năng nhúng và phát phụ thuộc website nguồn.</small>
  {movie.watchUrl&&<p><a className="crop-link" href={movie.watchUrl} target="_blank" rel="noopener noreferrer">Mở trang phim trên Prime Video ↗</a><br/><small>Phụ đề tiếng Việt trên Prime Video chưa được xác nhận.</small></p>}
@@ -83,4 +86,4 @@ function NativeWatch({movie}:{movie:MovieDetail}){
  <h2>Chọn nguồn</h2><div className="choices source-grid">{names.map(name=><button key={name} aria-pressed={activeProvider===name} className={activeProvider===name?'active':''} onClick={()=>setProvider(name)}>{name}</button>)}</div>
  </>;
 }
-export default function App(){return <><header><Link className="brand" to="/"><Film size={24}/> cinema<span>.</span></Link><nav><Link to="/">Khám phá</Link><Link to="/library"><Bookmark size={17}/> Thư viện</Link></nav></header><Routes><Route path="/" element={<Home/>}/><Route path="/library" element={<Home key="library" library/>}/><Route path="/watch/:id" element={<Watch/>}/><Route path="/tools/media" element={<MediaTools/>}/><Route path="*" element={<main><h1>Không tìm thấy trang</h1><Link to="/">Trang chủ</Link></main>}/></Routes><footer>Cinema · v0.1.13 · Phim mẫu và danh mục liên kết bên ngoài.</footer></>}
+export default function App(){return <><header><Link className="brand" to="/"><Film size={24}/> cinema<span>.</span></Link><nav><Link to="/">Khám phá</Link><Link to="/library"><Bookmark size={17}/> Thư viện</Link></nav></header><Routes><Route path="/" element={<Home/>}/><Route path="/library" element={<Home key="library" library/>}/><Route path="/watch/:id" element={<Watch/>}/><Route path="/tools/media" element={<MediaTools/>}/><Route path="*" element={<main><h1>Không tìm thấy trang</h1><Link to="/">Trang chủ</Link></main>}/></Routes><footer>Cinema · v0.1.14 · Phim mẫu và danh mục liên kết bên ngoài.</footer></>}

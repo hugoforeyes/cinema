@@ -28,7 +28,7 @@ try {
   await page.route('**/api/movies/jirai-glico', async route => {
     const response = await route.fetch();
     const movie = await response.json();
-    movie.externalListings = [{name:'Nguồn thử',url:fixture+'/series',language:'Vietsub',
+    movie.externalListings = [...movie.externalListings.filter(item=>item.name==='Đảo Phim'),{name:'Nguồn thử',url:fixture+'/series',language:'Vietsub',
       reportedEpisodes:6,episodePages:{1:fixture+'/1',2:fixture+'/2',4:fixture+'/blocked'}}];
     await route.fulfill({response,json:movie});
   });
@@ -55,6 +55,14 @@ try {
   await search.fill('Kéo Búa Mìn');
   await search.dispatchEvent('compositionend');
   await page.locator('a[href="/watch/jirai-glico"]').first().click();
+  await page.getByRole('button',{name:'Đảo Phim',exact:true}).click();
+  for(const n of [1,2,3,4,5,6]){
+    await page.getByRole('button',{name:'Tập '+n,exact:true}).click();
+    const link=page.getByRole('link',{name:'Mở Tập '+n+' trên Đảo Phim ↗'});
+    assert.equal(await link.getAttribute('href'),'https://daophim.lat/xem-phim/keo-bua-min/tap-0'+n+'/nguonc?server=vietsub-1');
+    assert.equal(await page.locator('iframe').count(),0);
+  }
+  await page.getByRole('button',{name:'Tập 1',exact:true}).click();
   await page.getByRole('button',{name:'Nguồn thử'}).click();
   const frame = page.frameLocator('iframe');
   const play = frame.getByRole('button',{name:'Play /1',exact:true});
