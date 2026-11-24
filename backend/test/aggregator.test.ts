@@ -9,3 +9,5 @@ test('one failed provider does not block search',async()=>{const x=new Aggregato
 test('unknown movie is missing',async()=>assert.equal(await a.detail('missing'),null));
 
 test('Vietnamese accents, punctuation, and English aliases find official movie',async()=>{for(const q of ['Kéo Búa Mìn','keo bua min','Kéo, Búa, Mìn','Rock Paper Landmines','Jirai Glico','Ke\u0301o Bu\u0301a Mi\u0300n']){const r=await a.search(q);assert.equal(r.movies[0]?.id,'jirai-glico');assert.ok(r.movies[0]?.watchUrl?.startsWith('https://www.primevideo.com/'));}assert.equal((await a.sources('jirai-glico','feature')).items.length,0)});
+
+test('Vietsub search exposes separately labeled external listings, not stream URLs',async()=>{const r=await a.search('keo bua min vietsub');assert.equal(r.movies[0]?.id,'jirai-glico');const detail=await a.detail('jirai-glico');assert.equal(detail?.externalListings?.length,5);assert.ok(detail?.externalListings?.every(item=>item.language==='Vietsub'&&item.reportedEpisodes===6&&item.url.startsWith('https://')));assert.equal((await a.sources('jirai-glico','feature')).items.length,0);});
