@@ -44,3 +44,6 @@ Confirm the permission prompt, start playback normally, and press Enter in the t
 
 ## Embedded player
 Media Tools and the episode player also accept authorized external HTTPS embed URLs. The iframe is sandboxed without popups, top-level navigation or same-origin permission. Websites can refuse framing or require permissions this sandbox does not provide; Cinema does not bypass those restrictions. Use the source's official player in that case. No server-side browser streaming or video proxy is installed.
+
+## Cropped iframe view
+External catalog listings now use a single cropped iframe view instead of a direct-video selector. Choose a site, select the episode in the full-page preview, then adjust the visible rectangle and save it. Crop coordinates are saved locally per listing URL. Cinema cannot inspect or modify cross-origin page DOM and does not bypass frame restrictions or mandatory source controls. There are no verified per-episode URLs for these listings. Native playback remains available for the authorized demo catalog; diagnostic Media Tools is still accessible via its direct route but removed from the main navigation.
