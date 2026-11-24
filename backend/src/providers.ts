@@ -28,7 +28,7 @@ const officialMovie:Movie = {
  aliases:['Kéo, Búa, Mìn','Rock, Paper, Landmines','Rock, Paper, Landmine','Jirai Glico','地雷グリコ','Vietsub','phụ đề tiếng Việt'],
  watchUrl:'https://www.primevideo.com/detail/0H3KVJK9MTLRPQKPE8OUY64YJU',
  externalListings:[
-  {name:'Motchill',url:'https://motchillti.mx/phim/keo-bua-min',language:'Vietsub',reportedEpisodes:6},
+  {name:'Motchill',url:'https://motchillti.mx/phim/keo-bua-min',language:'Vietsub',reportedEpisodes:6,episodePages:{'1':'https://motchillfv.help/xem-phim/keo-bua-min-tap-1/?sv=vietsub-1'}},
   {name:'RoPhim',url:'https://rophim.bar/phimmoi-keo-bua-min-22753.html',language:'Vietsub',reportedEpisodes:6},
   {name:'PhimSubViet',url:'https://phimsubviet.me/phim/keo-bua-min',language:'Vietsub',reportedEpisodes:6},
   {name:'Movina',url:'https://www.movina.tv/phim/keo-bua-min',language:'Vietsub',reportedEpisodes:6},
