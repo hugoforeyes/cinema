@@ -45,5 +45,5 @@ export const providers: MovieProvider[] = [
   async search(q){return catalog.slice(0,1).filter(m=>matches(m,q)).map(publicMovie)},
   async getEpisodes(id){return id===catalog[0].id?[episode]:[]},
   async getVideoSources(id,ep){return id===catalog[0].id&&ep===episode.id?[{id:'hls-bunny',provider:'Mux HLS demo',label:'Adaptive HLS',type:'hls',url:'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8'}]:[]}},
- {name:'Official viewing links',async search(q){return matches(officialMovie,q)?[officialMovie]:[]},async getEpisodes(){return []},async getVideoSources(){return []}}
+ {name:'Official viewing links',async search(q){return matches(officialMovie,q)?[officialMovie]:[]},async getEpisodes(id){return id===officialMovie.id?Array.from({length:6},(_,i)=>({id:String(i+1),title:'Tập '+(i+1)})):[]},async getVideoSources(){return []}}
 ];
