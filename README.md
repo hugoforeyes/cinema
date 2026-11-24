@@ -32,3 +32,12 @@ Merge the MVP into main, then create a Web Service from this repository with Doc
 Demo catalog: Big Buck Bunny, Sintel, Elephants Dream (Blender Foundation, CC BY; see https://www.blender.org/about/projects/). MP4 demonstration URLs are from Google's public sample bucket; HLS demonstration URL from Mux. Availability, CORS and playback depend on the upstream hosts. No commercial source integration is included. Add only providers you have permission to integrate. This app does not bypass access controls or proxy video.
 
 Production tasks: verify actual playback in Safari/Chrome, add end-to-end tests, lock dependencies, and verify Render deployment.
+
+## Local media inspector
+For pages you own or have permission to integrate, run:
+```sh
+npm install
+npx playwright install chromium
+npm run inspect -- "https://example.com/watch"
+```
+Confirm the permission prompt, start playback normally, and press Enter in the terminal to export .cinema/sources.json. In Cinema, open Media tools (or the episode player) and import the JSON file. Select a compatible HLS or MP4 observation to try it in the existing player. No film or website is hard-coded into the inspector. The report is private and gitignored; no backend upload or remote browser endpoint is provided. URLs may expire or be restricted. The inspector observes only normal successful responses and does not bypass access controls. DASH/iframe/subtitle observations are informational; select a local VTT file for captions. Chromium installation is local only; Render does not need it.
