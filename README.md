@@ -41,3 +41,6 @@ npx playwright install chromium
 npm run inspect -- "https://example.com/watch"
 ```
 Confirm the permission prompt, start playback normally, and press Enter in the terminal to export .cinema/sources.json. In Cinema, open Media tools (or the episode player) and import the JSON file. Select a compatible HLS or MP4 observation to try it in the existing player. No film or website is hard-coded into the inspector. The report is private and gitignored; no backend upload or remote browser endpoint is provided. URLs may expire or be restricted. The inspector observes only normal successful responses and does not bypass access controls. DASH/iframe/subtitle observations are informational; select a local VTT file for captions. Chromium installation is local only; Render does not need it.
+
+## Embedded player
+Media Tools and the episode player also accept authorized external HTTPS embed URLs. The iframe is sandboxed without popups, top-level navigation or same-origin permission. Websites can refuse framing or require permissions this sandbox does not provide; Cinema does not bypass those restrictions. Use the source's official player in that case. No server-side browser streaming or video proxy is installed.
