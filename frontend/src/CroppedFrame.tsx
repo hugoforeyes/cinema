@@ -5,30 +5,30 @@ import {read,write} from './api';
 
 export default function CroppedFrame({url,storageKey}:{url:string;storageKey:string}){
  const [crop,setCrop]=useState(()=>normalizeCrop({...defaultCrop,...read<Partial<FrameCrop>>('cinema:crop:'+storageKey,{})}));
- const [preview,setPreview]=useState(true);
- const [adjust,setAdjust]=useState(true);
+ const [preview,setPreview]=useState(()=>!read<FrameCrop|null>('cinema:crop:'+storageKey,null));
+ const [adjust,setAdjust]=useState(()=>!read<FrameCrop|null>('cinema:crop:'+storageKey,null));
  const [displayWidth,setDisplayWidth]=useState(390);
  const ref=useRef<HTMLDivElement>(null);
- const iframeRef=useRef<HTMLIFrameElement>(null);
  useEffect(()=>{const el=ref.current;if(!el)return;const update=()=>setDisplayWidth(el.clientWidth||390);update();const observer=new ResizeObserver(update);observer.observe(el);return()=>observer.disconnect()},[]);
+ useEffect(()=>{if(ref.current){ref.current.scrollTop=0;ref.current.scrollLeft=0}},[preview]);
  const g=frameGeometry(crop,displayWidth,preview);
  let src='';try{src=parseEmbedUrl(url,window.location.origin)}catch{}
  function change(key:keyof FrameCrop,value:number){setCrop(old=>normalizeCrop({...old,[key]:value}))}
  function save(){write('cinema:crop:'+storageKey,crop);setPreview(false);setAdjust(false)}
- function reset(){setCrop(defaultCrop);setPreview(true);setAdjust(true)}
+ function reset(){setCrop(defaultCrop);write('cinema:crop:'+storageKey,null);setPreview(true);setAdjust(true)}
  if(!src)return <p className="notice">URL nguồn không hợp lệ.</p>;
  return <section className="crop-player">
  <div ref={ref} className="crop-window" style={{height:g.height,overflow:preview?'auto':'hidden'}}>
  <div style={{position:'relative',width:displayWidth,height:preview?g.frameHeight*g.scale:g.height}}>
- <iframe ref={iframeRef} title="Khung nguồn video" src={src} style={{position:'absolute',left:g.left,top:g.top,width:g.frameWidth,height:g.frameHeight,border:0,transformOrigin:'top left',transform:'scale('+g.scale+')'}} sandbox="allow-scripts allow-presentation" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen referrerPolicy="no-referrer"/>
+ <iframe title="Khung nguồn video" src={src} style={{position:'absolute',left:g.left,top:g.top,width:g.frameWidth,height:g.frameHeight,border:0,transformOrigin:'top left',transform:'scale('+g.scale+')'}} sandbox="allow-scripts allow-presentation" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen referrerPolicy="no-referrer"/>
  {preview&&adjust&&<div aria-hidden="true" style={{position:'absolute',left:crop.x*g.scale,top:crop.y*g.scale,width:crop.width*g.scale,height:crop.height*g.scale,border:'2px solid #f07965',pointerEvents:'none',boxSizing:'border-box'}}/>}
  </div></div>
  <div className="crop-actions"><button className="secondary" onClick={()=>{setPreview(v=>!v);setAdjust(true)}}>{preview?'Xem vùng cắt':'Xem toàn trang'}</button><button className="secondary" onClick={()=>setAdjust(v=>!v)}>{adjust?'Ẩn căn chỉnh':'Căn chỉnh'}</button></div>
- {adjust&&<div className="crop-controls"><small>Di chuyển vùng cắt màu cam đến video. Trang phải cho phép iframe; Cinema không sửa DOM, quảng cáo, thông báo hoặc cơ chế bảo mật của nguồn.</small>
+ {adjust&&<div className="crop-controls"><small>Căn vùng màu cam tới trình phát, rồi bấm Lưu vùng xem. Các thao tác bắt buộc của nguồn vẫn phải được thực hiện trong chế độ toàn trang.</small>
  {([
  ['viewportWidth','Rộng trang',320,1600],['viewportHeight','Cao trang',400,4000],['x','Vị trí ngang',0,Math.max(0,crop.viewportWidth-crop.width)],['y','Vị trí dọc',0,Math.max(0,crop.viewportHeight-crop.height)],['width','Rộng vùng cắt',120,crop.viewportWidth],['height','Cao vùng cắt',68,crop.viewportHeight]
  ] as [keyof FrameCrop,string,number,number][]).map(([key,label,min,max])=><label key={key}><span>{label} <small>{Math.round(crop[key])} px</small></span><input type="range" min={min} max={max} step={1} value={crop[key]} onChange={e=>change(key,Number(e.target.value))}/></label>)}
  <div className="crop-actions"><button className="primary" onClick={save}>Lưu vùng xem</button><button className="secondary" onClick={reset}>Đặt lại</button></div></div>}
- <small>Nếu trang không hiển thị hoặc yêu cầu thao tác ngoài vùng cắt, dùng chế độ toàn trang hoặc nguồn chính thức. Chỉ sử dụng với trang cho phép nhúng và nội dung bạn được phép xem theo cách này.</small>
+ <small>Nếu trang chặn iframe hoặc cần thao tác ngoài vùng cắt, mở toàn trang hoặc <a className="crop-link" href={src} target="_blank" rel="noopener noreferrer">trang gốc</a>. Chỉ dùng với nội dung được phép nhúng.</small>
  </section>
 }
