@@ -7,6 +7,7 @@ import Player from './Player';
 import {selectSource} from '../../shared/source-selection';
 import MediaTools from './MediaTools';
 import CroppedFrame from './CroppedFrame';
+import {episodePage} from '../../shared/episode-page';
 
 function Poster({movie}:{movie:Movie}){return <Link className="poster" to={'/watch/'+movie.id}><div className="art"><img src={movie.artwork} alt="" loading="lazy"/><span className="playbadge"><Play size={20} fill="currentColor"/></span></div><strong>{movie.title}</strong><small>{movie.year} · {movie.duration}</small></Link>}
 function Home({library=false}:{library?:boolean}){
@@ -42,14 +43,19 @@ function Watch(){
 }
 function CropWatch({movie}:{movie:MovieDetail}){
  const [name,setName]=useState('');
+ const [episode,setEpisode]=useState(movie.episodes[0]?.id??'');
  const listing=movie.externalListings?.find(x=>x.name===name);
+ const url=episodePage(listing,episode);
+ const label=movie.episodes.find(e=>e.id===episode)?.title??'';
  return <>
+ <h2>Chọn tập</h2>
+ <div className="choices episode-grid">{movie.episodes.map(e=><button key={e.id} aria-pressed={episode===e.id} className={episode===e.id?'active':''} onClick={()=>setEpisode(e.id)}>{e.title}</button>)}</div>
  <h2>Chọn nguồn</h2>
- <div className="choices source-grid">{movie.externalListings?.map(item=><button key={item.name} aria-pressed={item.name===name} className={item.name===name?'active':''} onClick={()=>setName(item.name)}>{item.name}</button>)}</div>
+ <div className="choices source-grid">{movie.externalListings?.map(item=><button key={item.name} aria-pressed={item.name===name} className={item.name===name?'active':''} onClick={()=>setName(item.name)}>{item.name}{!episodePage(item,episode)&&<small>Chưa có link tập</small>}</button>)}</div>
  <section aria-label="Khung xem phim" style={{marginTop:16}}>
- {listing?<CroppedFrame key={listing.url} url={listing.url} storageKey={listing.url}/>:<div className="player empty video-status"><div><Film size={30}/><strong>Chọn website để mở khung xem</strong><small>Chỉ mở trang khi bạn chọn nguồn.</small></div></div>}
+ {url&&listing?<CroppedFrame key={url} url={url} storageKey={listing.url}/>:<div className="player empty video-status" role="status"><div><Film size={30}/><strong>{listing?'Chưa có link '+label:'Chọn nguồn để xem '+label}</strong><small>{listing?'Không mở trang giới thiệu thay cho tập phim.':'Chọn tập và website.'}</small></div></div>}
  </section>
- <small style={{display:'block',marginTop:12}}>Chọn tập trong trang nguồn ở chế độ toàn trang. Cinema chưa có đường dẫn riêng từng tập; khả năng nhúng và phát phụ thuộc vào website.</small>
+ <small style={{display:'block',marginTop:12}}>Cinema chỉ mở đường dẫn riêng đã cấu hình cho từng tập. Khả năng nhúng và phát phụ thuộc website nguồn.</small>
  </>;
 }
 function NativeWatch({movie}:{movie:MovieDetail}){
@@ -76,4 +82,4 @@ function NativeWatch({movie}:{movie:MovieDetail}){
  <h2>Chọn nguồn</h2><div className="choices source-grid">{names.map(name=><button key={name} aria-pressed={activeProvider===name} className={activeProvider===name?'active':''} onClick={()=>setProvider(name)}>{name}</button>)}</div>
  </>;
 }
-export default function App(){return <><header><Link className="brand" to="/"><Film size={24}/> cinema<span>.</span></Link><nav><Link to="/">Khám phá</Link><Link to="/library"><Bookmark size={17}/> Thư viện</Link></nav></header><Routes><Route path="/" element={<Home/>}/><Route path="/library" element={<Home key="library" library/>}/><Route path="/watch/:id" element={<Watch/>}/><Route path="/tools/media" element={<MediaTools/>}/><Route path="*" element={<main><h1>Không tìm thấy trang</h1><Link to="/">Trang chủ</Link></main>}/></Routes><footer>Cinema · v0.1.11 · Phim mẫu và danh mục liên kết bên ngoài.</footer></>}
+export default function App(){return <><header><Link className="brand" to="/"><Film size={24}/> cinema<span>.</span></Link><nav><Link to="/">Khám phá</Link><Link to="/library"><Bookmark size={17}/> Thư viện</Link></nav></header><Routes><Route path="/" element={<Home/>}/><Route path="/library" element={<Home key="library" library/>}/><Route path="/watch/:id" element={<Watch/>}/><Route path="/tools/media" element={<MediaTools/>}/><Route path="*" element={<main><h1>Không tìm thấy trang</h1><Link to="/">Trang chủ</Link></main>}/></Routes><footer>Cinema · v0.1.12 · Phim mẫu và danh mục liên kết bên ngoài.</footer></>}

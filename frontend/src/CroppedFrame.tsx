@@ -7,7 +7,7 @@ export default function CroppedFrame({url,storageKey}:{url:string;storageKey:str
  const [crop,setCrop]=useState(()=>normalizeCrop({...defaultCrop,...read<Partial<FrameCrop>>('cinema:crop:'+storageKey,{})}));
  const [preview,setPreview]=useState(()=>!read<FrameCrop|null>('cinema:crop:'+storageKey,null));
  const [adjust,setAdjust]=useState(()=>!read<FrameCrop|null>('cinema:crop:'+storageKey,null));
- const [locked,setLocked]=useState(()=>!read<FrameCrop|null>('cinema:crop:'+storageKey,null));
+ const [locked,setLocked]=useState(false);
  const [displayWidth,setDisplayWidth]=useState(390);
  const ref=useRef<HTMLDivElement>(null);
  useEffect(()=>{const el=ref.current;if(!el)return;const update=()=>setDisplayWidth(el.clientWidth||390);update();const observer=new ResizeObserver(update);observer.observe(el);return()=>observer.disconnect()},[]);
@@ -16,7 +16,7 @@ export default function CroppedFrame({url,storageKey}:{url:string;storageKey:str
  let src='';try{src=parseEmbedUrl(url,window.location.origin)}catch{}
  function change(key:keyof FrameCrop,value:number){setCrop(old=>normalizeCrop({...old,[key]:value}))}
  function save(){write('cinema:crop:'+storageKey,crop);setPreview(false);setAdjust(false);setLocked(false)}
- function reset(){setCrop(defaultCrop);write('cinema:crop:'+storageKey,null);setPreview(true);setAdjust(true);setLocked(true)}
+ function reset(){setCrop(defaultCrop);write('cinema:crop:'+storageKey,null);setPreview(true);setAdjust(true);setLocked(false)}
  if(!src)return <p className="notice">URL nguồn không hợp lệ.</p>;
  return <section className="crop-player">
  <div ref={ref} className="crop-window" style={{height:g.height,overflow:preview?'auto':'hidden'}}>
@@ -25,8 +25,8 @@ export default function CroppedFrame({url,storageKey}:{url:string;storageKey:str
  {preview&&adjust&&<div aria-hidden="true" style={{position:'absolute',left:crop.x*g.scale,top:crop.y*g.scale,width:crop.width*g.scale,height:crop.height*g.scale,border:'2px solid #f07965',pointerEvents:'none',boxSizing:'border-box'}}/>}
  </div></div>
  <div className="crop-actions"><button className="secondary" onClick={()=>{setPreview(v=>!v);setAdjust(true)}}>{preview?'Xem vùng cắt':'Xem toàn trang'}</button><button className="secondary" onClick={()=>setAdjust(v=>!v)}>{adjust?'Ẩn căn chỉnh':'Căn chỉnh'}</button><button className="secondary" aria-pressed={locked} onClick={()=>setLocked(v=>!v)}>{locked?'Cho phép thao tác':'Khóa thao tác'}</button></div>
- {locked&&<small>Đã khóa thao tác trong iframe. Mở khóa khi cần chọn tập hoặc bấm Play.</small>}
- {adjust&&<div className="crop-controls"><small>Căn vùng màu cam tới trình phát, rồi bấm Lưu vùng xem. Mở khóa thao tác khi cần chọn tập. Các thao tác bắt buộc của nguồn vẫn phải được thực hiện trong chế độ toàn trang.</small>
+ <small role="status">{locked?'Đã khóa thao tác. Bấm Cho phép thao tác để sử dụng trình phát.':'Đang cho phép thao tác trực tiếp trong iframe.'}</small>
+ {adjust&&<div className="crop-controls"><small>Căn vùng màu cam tới trình phát, rồi bấm Lưu vùng xem. Bạn có thể bấm trực tiếp trong iframe hoặc khóa thao tác khi cần. Các thao tác bắt buộc của nguồn vẫn phải được thực hiện trong chế độ toàn trang.</small>
  {([
  ['viewportWidth','Rộng trang',320,1600],['viewportHeight','Cao trang',400,4000],['x','Vị trí ngang',0,Math.max(0,crop.viewportWidth-crop.width)],['y','Vị trí dọc',0,Math.max(0,crop.viewportHeight-crop.height)],['width','Rộng vùng cắt',120,crop.viewportWidth],['height','Cao vùng cắt',68,crop.viewportHeight]
  ] as [keyof FrameCrop,string,number,number][]).map(([key,label,min,max])=><label key={key}><span>{label} <small>{Math.round(crop[key])} px</small></span><input type="range" min={min} max={max} step={1} value={crop[key]} onChange={e=>change(key,Number(e.target.value))}/></label>)}
