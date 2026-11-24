@@ -25,6 +25,8 @@ function EpisodeSource({episode,progressKey,pageLinks}:{episode:number;progressK
  const videoUrl=useObjectUrl(file),subtitleUrl=useObjectUrl(sub);
  const source:VideoSource|null=file?(videoUrl?{id:'local',provider:'Thiết bị',label:file.name,type:'mp4',url:videoUrl}:null):remote;
  return <>
+ <EmbedPlayer pageLinks={pageLinks}/>
+ <details style={{marginTop:16}}><summary style={{cursor:"pointer",padding:12,background:"#23232d",borderRadius:10}}>Công cụ nâng cao · HLS / MP4 / phụ đề</summary>
  <h2>Trình phát Cinema · Tập {episode}</h2>
  {source?<Player source={source} progressKey={progressKey} subtitleUrl={subtitleUrl||undefined}/>:<div className="player empty" style={{textAlign:'center',padding:20}}><div><strong>Chưa có video cho tập {episode}</strong><p><small>Chọn video từ thiết bị hoặc nhập URL video được phép sử dụng.</small></p></div></div>}
  <div style={{padding:16,background:'#1d1d25',borderRadius:12,marginTop:12,display:'grid',gap:12}}>
@@ -38,5 +40,5 @@ function EpisodeSource({episode,progressKey,pageLinks}:{episode:number;progressK
  {error&&<p role="alert" className="notice">{error}</p>}
  <InspectorReport onSelect={item=>{const type=item.type==='HLS'?'hls':'mp4';setFile(null);setUrl(item.url);setKind(type);setRemote({id:'inspected',provider:'Local Inspector',label:type.toUpperCase(),type,url:item.url});setError('')}}/>
  <small>File chỉ được đọc trên thiết bị, không tải lên Render. URL trang xem phim không phải URL video. Nguồn từ xa phải cho phép trình duyệt phát; Cinema không vượt DRM hoặc hạn chế của nguồn.</small>
- </div><EmbedPlayer pageLinks={pageLinks}/></>;
+ </div></details></>;
 }
