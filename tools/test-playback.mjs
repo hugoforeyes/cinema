@@ -37,6 +37,8 @@ try {
         document.querySelector('output').textContent=String(!popup && blocked)}
       </script></main>`});
   });
+  await context.tracing.start({screenshots:true,snapshots:true});
+  try {
   await page.goto(base);
   const search = page.getByRole('textbox',{name:'Tìm phim'});
   await search.dispatchEvent('compositionstart');
@@ -60,7 +62,7 @@ try {
   assert(Math.abs(await video.evaluate(v=>v.currentTime)-4)<.1);
   const vertical = page.getByRole('slider',{name:/Vị trí dọc/});
   for(let i=0;i<80;i++) await vertical.press('ArrowRight');
-  await page.getByText('Lưu vùng xem').click();
+  await page.getByRole('button',{name:'Lưu vùng xem',exact:true}).click();
   for(const width of [390,768]){
     await page.setViewportSize({width,height:844});
     await page.waitForFunction(()=>{
@@ -97,6 +99,17 @@ try {
   await page.locator('iframe[src$="/blocked"]').waitFor();
   await page.waitForLoadState('networkidle');
   assert.equal(await frame.getByText('Forbidden player').count(),0);
+  await page.route('**/api/movies/big-buck-bunny/episodes/*/sources',route=>route.fulfill({
+    json:{sources:[{id:'test',provider:'Test',label:'Clip thử',type:'mp4',url:'data:video/mp4;base64,'+clip}],unavailableProviders:[]}
+  }));
+  await page.goto(base+'/watch/big-buck-bunny');
+  const native=page.locator('video');
+  await native.evaluate(async v=>{v.muted=true;await v.play()});
+  await page.waitForFunction(()=>document.querySelector('video')?.currentTime>.25);
+  } catch(error) {
+    await context.tracing.stop({path:'playback-'+engine+'.zip'});
+    throw error;
+  }
   console.log(engine+' PASS: touch, timed Vietnamese cue, transport, sandbox, crop, persistence, episode switching and missing mapping.');
 } finally {
   await browser.close();
