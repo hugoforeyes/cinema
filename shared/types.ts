@@ -1,4 +1,4 @@
-export interface ExternalListing { name: string; url: string; language: string; reportedEpisodes: number; }
+export interface ExternalListing { name: string; url: string; language: string; reportedEpisodes: number; episodePages?: Record<string,string>; }
 export interface Movie {
   id: string; title: string; year: number; description: string;
   genre: string; artwork: string; duration: string; credit: string; watchUrl?: string; aliases?: string[]; externalListings?: ExternalListing[];
